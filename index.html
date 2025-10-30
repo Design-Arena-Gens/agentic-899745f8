@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mohammad Reza Shah International Travels</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Merriweather:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-sA+4psmD7G/Ku5u9e9Y+u7J4s2pcPUp7Y7Qv0v5pZvY="
+      crossorigin=""
+    />
+    <style>
+      :root {
+        --background: #f9f6f0;
+        --accent: #1e3a8a;
+        --accent-light: rgba(30, 58, 138, 0.1);
+        --body-font: 'Lato', sans-serif;
+        --heading-font: 'Merriweather', serif;
+        --sidebar-width: 360px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: var(--body-font);
+        background: var(--background);
+        color: #1a1a1a;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid rgba(30, 58, 138, 0.12);
+        z-index: 1000;
+      }
+
+      header h1 {
+        margin: 0;
+        font-family: var(--heading-font);
+        font-size: 1.5rem;
+        color: #111827;
+      }
+
+      .layout {
+        display: flex;
+        flex: 1 1 auto;
+        position: relative;
+        min-height: 0;
+      }
+
+      #map {
+        flex: 1 1 auto;
+        height: calc(100vh - 72px);
+        position: relative;
+        z-index: 1;
+      }
+
+      .sidebar {
+        width: var(--sidebar-width);
+        max-width: 100vw;
+        background: rgba(255, 255, 255, 0.95);
+        border-left: 1px solid rgba(17, 24, 39, 0.08);
+        padding: 24px 20px 120px;
+        overflow-y: auto;
+        position: relative;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .sidebar h2,
+      .sidebar h3 {
+        font-family: var(--heading-font);
+        color: #111827;
+        margin-top: 0;
+      }
+
+      .sidebar h2 {
+        font-size: 1.3rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .sidebar h3 {
+        font-size: 1.05rem;
+        margin-top: 1.8rem;
+        margin-bottom: 0.6rem;
+      }
+
+      .sidebar.closed {
+        transform: translateX(100%);
+        box-shadow: none;
+      }
+
+      .sidebar.open {
+        box-shadow: -8px 0 24px rgba(17, 24, 39, 0.12);
+      }
+
+      .sidebar-toggle {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        z-index: 1200;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(30, 58, 138, 0.25);
+        transition: transform 0.2s ease;
+      }
+
+      .sidebar-toggle:active {
+        transform: scale(0.94);
+      }
+
+      .sidebar-toggle span {
+        width: 18px;
+        height: 2px;
+        background: currentColor;
+        position: relative;
+      }
+
+      .sidebar-toggle span::before,
+      .sidebar-toggle span::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: currentColor;
+      }
+
+      .sidebar-toggle span::before {
+        top: -6px;
+      }
+
+      .sidebar-toggle span::after {
+        top: 6px;
+      }
+
+      .filters {
+        display: grid;
+        gap: 12px;
+      }
+
+      .filters label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+      }
+
+      .filters input[type='checkbox'] {
+        width: 20px;
+        height: 20px;
+        accent-color: var(--accent);
+      }
+
+      .search-box {
+        position: relative;
+        margin-top: 24px;
+      }
+
+      .search-box input {
+        width: 100%;
+        padding: 12px 40px 12px 14px;
+        border-radius: 999px;
+        border: 1px solid rgba(17, 24, 39, 0.12);
+        font-size: 0.95rem;
+        background: rgba(255, 255, 255, 0.85);
+      }
+
+      .search-box svg {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        opacity: 0.6;
+      }
+
+      .destination-list {
+        margin-top: 18px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .destination-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(17, 24, 39, 0.08);
+        background: #fff;
+        cursor: pointer;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+      }
+
+      .destination-item:hover,
+      .destination-item:focus {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+
+      .destination-item span {
+        font-size: 0.85rem;
+        color: rgba(17, 24, 39, 0.6);
+      }
+
+      .details-panel {
+        margin-top: 28px;
+        border-top: 1px solid rgba(17, 24, 39, 0.08);
+        padding-top: 24px;
+      }
+
+      .details-panel img {
+        width: 100%;
+        border-radius: 16px;
+        object-fit: cover;
+        max-height: 200px;
+      }
+
+      .details-panel .meta {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+        font-size: 0.95rem;
+      }
+
+      .details-panel dt {
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+
+      .details-panel dd {
+        margin: 0 0 12px;
+        line-height: 1.5;
+      }
+
+      .timeline {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 16px 24px 20px;
+        background: rgba(249, 246, 240, 0.95);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        border-top: 1px solid rgba(17, 24, 39, 0.08);
+        z-index: 1001;
+      }
+
+      .timeline label {
+        font-family: var(--heading-font);
+        font-weight: 600;
+        font-size: 1rem;
+        min-width: 120px;
+      }
+
+      .timeline input[type='range'] {
+        flex: 1;
+        -webkit-appearance: none;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(17, 24, 39, 0.15);
+        outline: none;
+      }
+
+      .timeline input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(30, 58, 138, 0.3);
+      }
+
+      .timeline input[type='range']::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--accent);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 6px rgba(30, 58, 138, 0.3);
+      }
+
+      .timeline .year-badge {
+        font-family: var(--heading-font);
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--accent);
+        background: var(--accent-light);
+        padding: 6px 12px;
+        border-radius: 999px;
+      }
+
+      .leaflet-popup-content-wrapper,
+      .leaflet-popup-tip {
+        background: #ffffff;
+      }
+
+      .leaflet-popup-content {
+        margin: 0;
+      }
+
+      .popup-card {
+        padding: 12px 14px 10px;
+        max-width: 220px;
+      }
+
+      .popup-card p {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+
+      .popup-card button {
+        margin-top: 10px;
+        width: 100%;
+        padding: 8px 12px;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        font-weight: 600;
+      }
+
+      .popup-card button:focus {
+        outline: 2px solid rgba(30, 58, 138, 0.4);
+      }
+
+      .travel-marker {
+        position: relative;
+        width: 18px;
+        height: 18px;
+        transform: translate(-50%, -50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .travel-marker .pulse {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: rgba(30, 58, 138, 0.2);
+        animation: pulse 2.4s infinite;
+      }
+
+      .travel-marker .pin {
+        position: relative;
+        width: 12px;
+        height: 12px;
+        border-radius: 50% 50% 50% 0;
+        background: var(--accent);
+        transform: rotate(-45deg);
+        box-shadow: 0 4px 10px rgba(30, 58, 138, 0.35);
+      }
+
+      .travel-marker .pin::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #fff;
+        opacity: 0.6;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(0.9);
+          opacity: 0.6;
+        }
+        60% {
+          transform: scale(1.4);
+          opacity: 0;
+        }
+        100% {
+          transform: scale(0.9);
+          opacity: 0;
+        }
+      }
+
+      @keyframes dash {
+        to {
+          stroke-dashoffset: -1000;
+        }
+      }
+
+      .leaflet-overlay-pane .route-line {
+        stroke: var(--accent) !important;
+        stroke-dasharray: 6 8;
+        animation: dash 6s linear infinite;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        opacity: 0.85;
+      }
+
+      @media (max-width: 1024px) {
+        header {
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+
+        #map {
+          height: calc(100vh - 132px);
+        }
+
+        .sidebar {
+          position: fixed;
+          top: 72px;
+          right: 0;
+          height: calc(100vh - 72px);
+          padding-bottom: 160px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        :root {
+          --sidebar-width: 320px;
+        }
+
+        header h1 {
+          font-size: 1.25rem;
+        }
+
+        .timeline {
+          flex-wrap: wrap;
+        }
+
+        .timeline label {
+          flex: 0 0 100%;
+        }
+
+        #map {
+          height: calc(100vh - 120px);
+        }
+      }
+
+      @media (max-width: 480px) {
+        :root {
+          --sidebar-width: 100vw;
+        }
+
+        body {
+          font-size: 16px;
+        }
+
+        header {
+          padding: 12px 16px;
+        }
+
+        header h1 {
+          font-size: 1.1rem;
+        }
+
+        .sidebar {
+          padding: 20px 18px 140px;
+        }
+
+        .timeline input[type='range'] {
+          width: 100%;
+        }
+
+        .timeline {
+          padding: 12px 14px 16px;
+        }
+
+        .timeline .year-badge {
+          font-size: 1rem;
+        }
+
+        .destination-item {
+          padding: 12px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Mohammad Reza Shah &mdash; International Journeys</h1>
+      <button
+        id="sidebarToggle"
+        class="sidebar-toggle"
+        type="button"
+        aria-label="Toggle travel details sidebar"
+        aria-expanded="true"
+        aria-controls="travelSidebar"
+      >
+        <span aria-hidden="true"></span>
+      </button>
+    </header>
+    <div class="layout">
+      <div id="map" role="presentation" aria-hidden="true"></div>
+      <aside id="travelSidebar" class="sidebar open">
+        <div>
+          <h2>Explore the Reza Shah Itinerary</h2>
+          <p>
+            Filter destinations, search for a city, and delve into the detailed
+            narratives of key state visits and personal excursions.
+          </p>
+          <section class="filters" aria-label="Journey type filters">
+            <label>
+              <input
+                type="checkbox"
+                value="Diplomatic"
+                checked
+                aria-label="Diplomatic journeys"
+              />
+              Diplomatic
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                value="State Functions"
+                checked
+                aria-label="State function journeys"
+              />
+              State Functions
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                value="Personal"
+                checked
+                aria-label="Personal journeys"
+              />
+              Personal
+            </label>
+          </section>
+          <div class="search-box" role="search">
+            <input
+              type="search"
+              id="destinationSearch"
+              placeholder="Search destinations"
+              aria-label="Search destinations"
+            />
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M15.5 14h-.79l-.28-.27a6.487 6.487 0 0 0 1.57-4.23 6.5 6.5 0 1 0-6.5 6.5 6.487 6.487 0 0 0 4.23-1.57l.27.28v.79l5 5 1.5-1.5-5-5zm-6 0a4.5 4.5 0 1 1 .001-9.001A4.5 4.5 0 0 1 9.5 14z"
+              ></path>
+            </svg>
+          </div>
+          <section
+            class="destination-list"
+            id="destinationList"
+            aria-label="Destinations list"
+          ></section>
+        </div>
+        <section class="details-panel" id="detailsPanel" aria-live="polite">
+          <h3>Journey Highlights</h3>
+          <p>
+            Select a destination marker and choose "More Details" to view the
+            full story, images, and diplomatic notes for the visit.
+          </p>
+        </section>
+      </aside>
+    </div>
+    <div class="timeline" role="region" aria-label="Timeline control">
+      <label for="timelineRange">Timeline of Travels</label>
+      <input
+        type="range"
+        id="timelineRange"
+        min="1935"
+        max="1979"
+        step="1"
+        value="1979"
+        aria-valuemin="1935"
+        aria-valuemax="1979"
+        aria-valuenow="1979"
+        aria-label="Filter journeys by year"
+      />
+      <span class="year-badge" id="timelineYear">1979</span>
+    </div>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-o9N1j7kC7T5H1r43p+ljkPQ2j4JmqXW1jv3Z7r0PpE4="
+      crossorigin=""
+    ></script>
+    <script>
+      const destinations = [
+        {
+          id: 'london-1959',
+          name: 'London, United Kingdom',
+          coordinates: [51.5074, -0.1278],
+          year: 1959,
+          dates: 'May 21 - May 30, 1959',
+          type: 'Diplomatic',
+          quickSummary:
+            'State visit focusing on strengthening bilateral ties with the United Kingdom.',
+          fullDetails: {
+            image:
+              'https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?auto=format&fit=crop&w=900&q=80',
+            significance:
+              'Met with Queen Elizabeth II and senior ministers to discuss regional security and expanding economic cooperation.',
+            meetings:
+              'Royal banquet at Buckingham Palace; strategic talks at Downing Street; cultural engagements with the British Museum.',
+            notes:
+              'The visit was marked by ceremonial pageantry and discussions around energy and modernization partnerships.'
+          }
+        },
+        {
+          id: 'washington-1964',
+          name: 'Washington D.C., United States',
+          coordinates: [38.9072, -77.0369],
+          year: 1964,
+          dates: 'April 10 - April 18, 1964',
+          type: 'State Functions',
+          quickSummary:
+            'Strategic consultations with U.S. leadership on regional stability and arms agreements.',
+          fullDetails: {
+            image:
+              'https://images.unsplash.com/photo-1529429617124-aee711d124d7?auto=format&fit=crop&w=900&q=80',
+            significance:
+              'Reaffirmed alignment on Cold War strategy and negotiated defense-related accords.',
+            meetings:
+              'Joint press conference with President Lyndon B. Johnson; luncheon at the Smithsonian; policy roundtable at the Pentagon.',
+            notes:
+              'Highlighted Iran’s modernization agenda, with commitments for technology transfers and economic aid.'
+          }
+        },
+        {
+          id: 'paris-1961',
+          name: 'Paris, France',
+          coordinates: [48.8566, 2.3522],
+          year: 1961,
+          dates: 'November 2 - November 9, 1961',
+          type: 'Diplomatic',
+          quickSummary:
+            'A week of cultural diplomacy and industrial collaborations with French leadership.',
+          fullDetails: {
+            image:
+              'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=80',
+            significance:
+              'Secured partnerships for infrastructure development and educational exchanges.',
+            meetings:
+              'Formal reception at Élysée Palace with President Charles de Gaulle; visit to Dassault Aviation; Louvre gala evening.',
+            notes:
+              'Focused on diversifying Iran’s international collaborations beyond Anglo-American alliances.'
+          }
+        },
+        {
+          id: 'aswan-1975',
+          name: 'Aswan, Egypt',
+          coordinates: [24.0889, 32.8998],
+          year: 1975,
+          dates: 'January 15 - January 22, 1975',
+          type: 'Personal',
+          quickSummary:
+            'Private retreat with official undertones, hosted by President Anwar Sadat.',
+          fullDetails: {
+            image:
+              'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=900&q=80',
+            significance:
+              'Strengthened familial ties through the Shah’s marriage to Empress Farah, reinforcing Iranian-Egyptian relations.',
+            meetings:
+              'Informal consultations on regional diplomacy; Nile cruise receptions; tours of the Aswan High Dam.',
+            notes:
+              'Combined rest with behind-the-scenes dialogue on Middle Eastern peace efforts.'
+          }
+        }
+      ];
+
+      const journeys = [
+        {
+          id: 'grand-europe',
+          name: 'European State Circuit',
+          year: 1961,
+          type: 'Diplomatic',
+          stops: ['tehran-home', 'paris-1961', 'london-1959']
+        },
+        {
+          id: 'atlantic-alliance',
+          name: 'Atlantic Alliance Summit',
+          year: 1964,
+          type: 'State Functions',
+          stops: ['tehran-home', 'washington-1964']
+        },
+        {
+          id: 'nile-accord',
+          name: 'Nile Retreat',
+          year: 1975,
+          type: 'Personal',
+          stops: ['tehran-home', 'aswan-1975']
+        }
+      ];
+
+      const supplementalPoints = {
+        'tehran-home': {
+          name: 'Tehran, Iran',
+          coordinates: [35.6892, 51.389],
+          isOrigin: true
+        }
+      };
+
+      const state = {
+        year: 1979,
+        activeTypes: new Set(['Diplomatic', 'State Functions', 'Personal'])
+      };
+
+      const map = L.map('map', {
+        zoomControl: false
+      }).setView([30, 20], 3);
+
+      L.control
+        .zoom({
+          position: 'topright'
+        })
+        .addTo(map);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> & Carto',
+        maxZoom: 6,
+        minZoom: 2
+      }).addTo(map);
+
+      const markerLayer = L.layerGroup().addTo(map);
+      const routeLayer = L.layerGroup().addTo(map);
+
+      const markers = {};
+
+      const createMarkerIcon = () =>
+        L.divIcon({
+          className: 'travel-marker',
+          html: '<span class="pulse"></span><span class="pin"></span>',
+          iconSize: [18, 18],
+          iconAnchor: [9, 18],
+          popupAnchor: [0, -12]
+        });
+
+      function buildPopupContent(destination) {
+        return `
+          <div class="popup-card">
+            <p>${destination.quickSummary}</p>
+            <button type="button" data-destination="${destination.id}">
+              More Details
+            </button>
+          </div>
+        `;
+      }
+
+      function registerMarkerEvents(marker, destination) {
+        marker.on('popupopen', (event) => {
+          const popupEl = event.popup.getElement();
+          if (!popupEl) return;
+          const button = popupEl.querySelector('button[data-destination]');
+          if (!button) return;
+          button.addEventListener(
+            'click',
+            () => {
+              renderDetails(destination);
+              openSidebar();
+              marker.closePopup();
+            },
+            { once: true }
+          );
+        });
+      }
+
+      function createMarkers() {
+        destinations.forEach((destination) => {
+          const marker = L.marker(destination.coordinates, {
+            icon: createMarkerIcon()
+          }).bindPopup(buildPopupContent(destination), {
+            closeButton: false,
+            minWidth: 200,
+            autoPanPadding: [40, 40]
+          });
+
+          registerMarkerEvents(marker, destination);
+          markers[destination.id] = { marker, destination };
+        });
+      }
+
+      function shouldDisplayDestination(destination) {
+        return (
+          destination.year <= state.year && state.activeTypes.has(destination.type)
+        );
+      }
+
+      function renderMarkers() {
+        markerLayer.clearLayers();
+        Object.values(markers).forEach(({ marker, destination }) => {
+          if (shouldDisplayDestination(destination)) {
+            marker.addTo(markerLayer);
+          }
+        });
+      }
+
+      function resolveStopCoordinates(stopId) {
+        if (markers[stopId]) {
+          return markers[stopId].destination.coordinates;
+        }
+        if (supplementalPoints[stopId]) {
+          return supplementalPoints[stopId].coordinates;
+        }
+        return null;
+      }
+
+      function renderRoutes() {
+        routeLayer.clearLayers();
+        journeys.forEach((journey) => {
+          if (
+            journey.year > state.year ||
+            !state.activeTypes.has(journey.type)
+          ) {
+            return;
+          }
+          const latLngs = journey.stops
+            .map(resolveStopCoordinates)
+            .filter(Boolean);
+
+          if (latLngs.length < 2) return;
+
+          const route = L.polyline(latLngs, {
+            className: 'route-line'
+          });
+          route.addTo(routeLayer);
+        });
+      }
+
+      function openSidebar() {
+        const sidebar = document.getElementById('travelSidebar');
+        sidebar.classList.remove('closed');
+        sidebar.classList.add('open');
+        sidebarToggle.setAttribute('aria-expanded', 'true');
+      }
+
+      function toggleSidebar() {
+        const sidebar = document.getElementById('travelSidebar');
+        const isClosed = sidebar.classList.toggle('closed');
+        sidebar.classList.toggle('open', !isClosed);
+        sidebarToggle.setAttribute('aria-expanded', String(!isClosed));
+      }
+
+      function renderDetails(destination) {
+        const detailsPanel = document.getElementById('detailsPanel');
+        const { fullDetails } = destination;
+
+        detailsPanel.innerHTML = `
+          <h3>${destination.name}</h3>
+          <img src="${fullDetails.image}" alt="Scene representing ${
+          destination.name
+        } visit" loading="lazy" />
+          <dl class="meta">
+            <div>
+              <dt>Dates</dt>
+              <dd>${destination.dates}</dd>
+            </div>
+            <div>
+              <dt>Journey Type</dt>
+              <dd>${destination.type}</dd>
+            </div>
+            <div>
+              <dt>Significance</dt>
+              <dd>${fullDetails.significance}</dd>
+            </div>
+            <div>
+              <dt>Meetings & Engagements</dt>
+              <dd>${fullDetails.meetings}</dd>
+            </div>
+            <div>
+              <dt>Notes</dt>
+              <dd>${fullDetails.notes}</dd>
+            </div>
+          </dl>
+        `;
+      }
+
+      function buildDestinationList() {
+        const list = document.getElementById('destinationList');
+        list.innerHTML = '';
+
+        destinations
+          .slice()
+          .sort((a, b) => a.year - b.year)
+          .forEach((destination) => {
+            const button = document.createElement('button');
+            button.className = 'destination-item';
+            button.type = 'button';
+            button.dataset.destination = destination.id;
+            button.setAttribute('aria-label', `Focus on ${destination.name}`);
+            button.innerHTML = `
+              <strong>${destination.name}</strong>
+              <span>${destination.year}</span>
+            `;
+            button.addEventListener('click', () => {
+              openSidebar();
+              map.flyTo(destination.coordinates, 5, {
+                duration: 1.2
+              });
+              setTimeout(() => {
+                markers[destination.id].marker.openPopup();
+              }, 1200);
+            });
+            list.appendChild(button);
+          });
+      }
+
+      function filterDestinationList(query) {
+        const normalized = query.trim().toLowerCase();
+        const items = document.querySelectorAll('.destination-item');
+        items.forEach((item) => {
+          const id = item.dataset.destination;
+          const destination = markers[id]?.destination;
+          if (!destination) return;
+          const matches =
+            destination.name.toLowerCase().includes(normalized) ||
+            destination.type.toLowerCase().includes(normalized) ||
+            String(destination.year).includes(normalized);
+          item.style.display = matches ? 'flex' : 'none';
+        });
+      }
+
+      function updateTimelineUI(year) {
+        timelineRange.setAttribute('aria-valuenow', String(year));
+        timelineYear.textContent = year;
+      }
+
+      function handleTimelineChange(event) {
+        const year = Number(event.target.value);
+        state.year = year;
+        updateTimelineUI(year);
+        renderMarkers();
+        renderRoutes();
+      }
+
+      function handleFilterChange(event) {
+        const { checked, value } = event.target;
+        if (checked) {
+          state.activeTypes.add(value);
+        } else {
+          state.activeTypes.delete(value);
+        }
+        renderMarkers();
+        renderRoutes();
+      }
+
+      const sidebarToggle = document.getElementById('sidebarToggle');
+      const destinationSearch = document.getElementById('destinationSearch');
+      const timelineRange = document.getElementById('timelineRange');
+      const timelineYear = document.getElementById('timelineYear');
+
+      sidebarToggle.addEventListener('click', toggleSidebar);
+      destinationSearch.addEventListener('input', (event) =>
+        filterDestinationList(event.target.value)
+      );
+      timelineRange.addEventListener('input', handleTimelineChange);
+
+      document
+        .querySelectorAll(".filters input[type='checkbox']")
+        .forEach((input) => {
+          input.addEventListener('change', handleFilterChange);
+        });
+
+      function initialize() {
+        createMarkers();
+        renderMarkers();
+        renderRoutes();
+        buildDestinationList();
+        updateTimelineUI(state.year);
+      }
+
+      initialize();
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth > 1024) {
+          openSidebar();
+        }
+      });
+
+      window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          const sidebar = document.getElementById('travelSidebar');
+          if (sidebar.classList.contains('open') && window.innerWidth < 1024) {
+            toggleSidebar();
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
